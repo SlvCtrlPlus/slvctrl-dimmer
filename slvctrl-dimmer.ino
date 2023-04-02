@@ -15,13 +15,14 @@ int currentPowerPercentage = 0;
 char serial_command_buffer[32];
 SerialCommands serialCommands(&Serial, serial_command_buffer, sizeof(serial_command_buffer), "\n", " ");
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
-
+  
   DimmableLight::setSyncPin(ZERO_CROSS_PIN);
   DimmableLight::begin();
   dimmer.setBrightness(0);
-
+  
   serialCommands.SetDefaultHandler(commandUnrecognized);
   serialCommands.AddCommand(new SerialCommand("introduce", commandIntroduce));
   serialCommands.AddCommand(new SerialCommand("attributes", commandAttributes));
@@ -33,66 +34,67 @@ void setup() {
 
 void loop()
 {
-    serialCommands.ReadSerial();
+  serialCommands.ReadSerial();
 }
 
 void commandUnrecognized(SerialCommands* sender, const char* cmd)
 {
-    serial_printf(sender->GetSerial(), "Unrecognized command [%s]\n", cmd);
+  serial_printf(sender->GetSerial(), "Unrecognized command [%s]\n", cmd);
 }
 
-void commandIntroduce(SerialCommands* sender) {
-    serial_printf(sender->GetSerial(), "introduce;%s,%d,%d\n", DEVICE_TYPE, FW_VERSION, PROTOCOL_VERSION);
+void commandIntroduce(SerialCommands* sender)
+{
+  serial_printf(sender->GetSerial(), "introduce;%s,%d,%d\n", DEVICE_TYPE, FW_VERSION, PROTOCOL_VERSION);
 }
 
 void commandAttributes(SerialCommands* sender)
 {
-    serial_printf(sender->GetSerial(), "attributes;power:rw[0-100]\n");
+  serial_printf(sender->GetSerial(), "attributes;power:rw[0-100]\n");
 }
 
 void commandStatus(SerialCommands* sender) {
-    serial_printf(sender->GetSerial(), "status;power:%s\n", currentPowerPercentage);
+  serial_printf(sender->GetSerial(), "status;power:%s\n", currentPowerPercentage);
 }
 
 
 void commandGetPower(SerialCommands* sender)
 {
-    serial_printf(sender->GetSerial(), "get-power;%d;status:successful\n", currentPowerPercentage);
+  serial_printf(sender->GetSerial(), "get-power;%d;status:successful\n", currentPowerPercentage);
 }
 
 void commandSetPower(SerialCommands* sender)
 {
-    char* percentageStr = sender->Next();
+  char* percentageStr = sender->Next();
 
-    if (percentageStr == NULL) {
-        sender->GetSerial()->println("set-power;;status:failed,reason:percentage_param_missing\n");
-        return;
-    }
-  
-    int percentage = atoi(percentageStr);
+  if (percentageStr == NULL) {
+    sender->GetSerial()->println("set-power;;status:failed,reason:percentage_param_missing\n");
+    return;
+  }
 
-    if (percentage < 0 || percentage > 100) {
-        serial_printf(sender->GetSerial(), "set-power;%d;status:failed,reason:percentage_out_of_range\n", percentage);
-        return;
-    }
+  int percentage = atoi(percentageStr);
 
-    currentPowerPercentage = percentage;
-    int currentPower = map(percentage, 0, 100, 0, 255);
-  
-    dimmer.setBrightness(currentPower);
+  if (percentage < 0 || percentage > 100) {
+    serial_printf(sender->GetSerial(), "set-power;%d;status:failed,reason:percentage_out_of_range\n", percentage);
+    return;
+  }
 
-    serial_printf(sender->GetSerial(), "set-power;%d;status:successful\n", currentPowerPercentage);
+  currentPowerPercentage = percentage;
+  int currentPower = map(percentage, 0, 100, 0, 255);
+
+  dimmer.setBrightness(currentPower);
+
+  serial_printf(sender->GetSerial(), "set-power;%d;status:successful\n", currentPowerPercentage);
 }
 
 void commandTest(SerialCommands* sender)
 {
-    for (int i = 0; i <= 255; i++) {
-      dimmer.setBrightness(i);
+  for (int i = 0; i <= 255; i++) {
+    dimmer.setBrightness(i);
 
-      serial_printf(sender->GetSerial(), "test;%d;status:successful\n", i);
+    serial_printf(sender->GetSerial(), "test;%d;status:successful\n", i);
 
-      delay(50);
-    }
+    delay(50);
+  }
 
-    dimmer.setBrightness(0);
+  dimmer.setBrightness(0);
 }
