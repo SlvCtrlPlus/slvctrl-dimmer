@@ -53,7 +53,7 @@ void commandAttributes(SerialCommands* sender)
 }
 
 void commandStatus(SerialCommands* sender) {
-  serial_printf(sender->GetSerial(), "status;power:%s\n", currentPowerPercentage);
+  serial_printf(sender->GetSerial(), "status;power:%d\n", currentPowerPercentage);
 }
 
 
